@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 import feedparser
 from time import strftime
 from termcolor import cprint, colored
+from googl import Googl
+import os
 
 from sys import argv
 
@@ -30,12 +32,42 @@ FEEDS={
   }
 
 def main(feedstr):
+  printheader()
+  g=Googl()
   feed=feedparser.parse(feedstr['href'])
-  items=map(lambda e: dict(date=strftime(SHORT_TIME,e.published_parsed),title=e.title), feed.entries)
+  items=map(lambda e: dict(date=strftime(SHORT_TIME,e.published_parsed),title=e.title,href=e.link), feed.entries)
 
   for item in items:
-    cprint(item['date'], 'green', end=" - ")
-    cprint(item['title'], 'white')
+    cprint(item['date'], 'green', end=" ")
+    cprint(u"\u26a1", 'yellow', end=" ")
+    cprint(item['title'], 'white', end=" ")
+    cprint('<%s>'%g.shorten(item['href'])['id'], 'blue')
+
+def printheader():
+  _, columns = map(int, os.popen('stty size', 'r').read().split())
+  FOLHA=map(lambda e: e.rstrip(), """
+tttttttt                                     
+ LEE   E  ;EEGEE  EEEEL  EEEE EEEE    EE      
+ LEE     EEL   EE  EEt    EE,  EE,    EEE    
+ LEE  E  EE:   EEf EEt    EE,  EE,   jEEE    
+ LEE,,E  EE    EEE EEt    EE,  EE,   EGEE    
+ LEE  E  EE    EEE EEt    EEEEEEE,   E EEE   
+ LEE  E  EE    EEE EEt    EE,  EE,  .E EEE   
+ LEE     EE    EEL EEt    EE,  EE,  EEEEEE.  
+ LEE     EEE   EE  EEt .E EE,  EE,  E   EEE  
+LEEEEE     fEEf   LEEEEEE EEf tEEt.EEt ,EEEt""".strip().split('\n'))
+  maxwidth=max(map(len, FOLHA))
+  for line in FOLHA:
+    print ' '*((columns - maxwidth)/2),
+    print line
+  print ' '*10,
+  print '='*(columns - 20)
+  
+def printhelp():
+  print 'uso:', argv[0], '[caderno]'
+  print "Onde o parâmetro caderno pode ser um dos seguintes:"
+  for f in sorted(FEEDS.keys()):
+    print "- %s: %s" % (f, FEEDS[f]['title'])
 
 
 if __name__=='__main__':
@@ -47,6 +79,7 @@ if __name__=='__main__':
       if argv[1] not in FEEDS:
         print colored("Não foi possível achar feed:", 'red'), colored(argv[1],'red')
         printhelp()
+        exit()
       else: feed=argv[1]
 
   main(FEEDS[feed])
