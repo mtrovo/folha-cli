@@ -4,10 +4,10 @@
 import feedparser
 from time import strftime
 from termcolor import cprint, colored
-from googl import Googl
-import os
 
+import re
 from sys import argv
+import os
 
 SHORT_TIME='%d/%m %H:%M'
 FEEDS={
@@ -30,18 +30,23 @@ FEEDS={
   "folhinha":{"href":"http://feeds.folha.uol.com.br/folhinha/rss091.xml", "title":"Folhinha"},
   "turismo":{"href":"http://feeds.folha.uol.com.br/turismo/rss091.xml", "title":"Turismo"}
   }
+GET_ID_REGEX=re.compile('\/(\d+)-')
+
+def get_short_url(url):
+  """Usa um hack pra obter uma url menor ao inves de ir no Goo.gl ou algo do tipo."""
+  post_id=GET_ID_REGEX.findall(url)[0]
+  return 'http://folha.com/no'+str(post_id)
 
 def main(feedstr):
-  printheader()
-  g=Googl()
   feed=feedparser.parse(feedstr['href'])
   items=map(lambda e: dict(date=strftime(SHORT_TIME,e.published_parsed),title=e.title,href=e.link), feed.entries)
 
+  printheader()
   for item in items:
     cprint(item['date'], 'green', end=" ")
     cprint(u"\u26a1", 'yellow', end=" ")
     cprint(item['title'], 'white', end=" ")
-    cprint('<%s>'%g.shorten(item['href'])['id'], 'blue')
+    cprint('<%s>'%get_short_url(item['href']), 'blue')
 
 def printheader():
   _, columns = map(int, os.popen('stty size', 'r').read().split())
@@ -62,13 +67,12 @@ LEEEEE     fEEf   LEEEEEE EEf tEEt.EEt ,EEEt""".strip().split('\n'))
     print line
   print ' '*10,
   print '='*(columns - 20)
-  
+
 def printhelp():
   print 'uso:', argv[0], '[caderno]'
   print "Onde o parâmetro caderno pode ser um dos seguintes:"
   for f in sorted(FEEDS.keys()):
     print "- %s: %s" % (f, FEEDS[f]['title'])
-
 
 if __name__=='__main__':
   feed='emcimadahora'
